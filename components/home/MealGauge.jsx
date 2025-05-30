@@ -1,5 +1,5 @@
 import { useDailyGrade } from "@/hooks/useDailyGrade";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { View } from "react-native";
 import Animated, {
     Easing,
@@ -19,7 +19,7 @@ import Svg, {
 } from "react-native-svg";
 
 const AnimatedG = Animated.createAnimatedComponent(G);
-const AnimatedLine = Animated.createAnimatedComponent(Line);
+
 
 // Angle (deg) and brand colour for each score
 const SCORE_CONFIG = {
@@ -51,11 +51,9 @@ export default function MealGauge({
     strokeWidth = 18,
     animationDuration = 800,
 }) {
-    const { data: dailyGrade, isLoading } = useDailyGrade();
-
-    // Use daily grade if available, otherwise fall back to prop score
-    //const displayScore = dailyGrade?.average_grade || score;
-    const displayScore = "A";
+    const { data: dailyGrade, isLoading, error } = useDailyGrade();
+    const displayScore = dailyGrade?.average_grade || score;
+    //const displayScore = "E";
     console.log("displayScore", displayScore);
 
     const radius = size / 2 - strokeWidth / 2;
@@ -66,16 +64,19 @@ export default function MealGauge({
     const pointerAngle = useSharedValue(
         SCORE_CONFIG[displayScore]?.angle ?? 90
     );
+    const isFirstRender = useRef(true);
 
-    // Whenever the score prop changes, animate the pointer to the new angle
     useEffect(() => {
-        pointerAngle.value = withTiming(
-            SCORE_CONFIG[displayScore]?.angle ?? 90,
-            {
+        const targetAngle = SCORE_CONFIG[displayScore]?.angle ?? 90;
+        if (isFirstRender.current) {
+            pointerAngle.value = targetAngle; // Set immediately, no animation
+            isFirstRender.current = false;
+        } else {
+            pointerAngle.value = withTiming(targetAngle, {
                 duration: animationDuration,
                 easing: Easing.bezier(0.4, 0, 0.2, 1),
-            }
-        );
+            });
+        }
     }, [displayScore, animationDuration]);
 
     // Guitar pick shape (triangle with rounded base)
@@ -85,10 +86,6 @@ export default function MealGauge({
 
     // Path for a guitar pick, centered at (0,0), pointing up
     function getPickPath() {
-        // Tip at (0, -pickLength)
-        // Base left at (-pickWidth/2, 0)
-        // Base right at (pickWidth/2, 0)
-        // Use arc for rounded base
         return (
             `M 0,${-pickLength} ` +
             `L ${-pickWidth / 2},0 ` +
@@ -96,11 +93,10 @@ export default function MealGauge({
         );
     }
 
-    // Animated props for the group rotation
     const animatedGroupProps = useAnimatedProps(() => ({
-        // SVG rotate(angle, cx, cy)
-        // react-native-svg expects the prop as a string: "angle cx cy"
-        rotate: `${pointerAngle.value} ${cx} ${cy}`,
+        rotation: pointerAngle.value, // degrees
+        originX: cx, // pivot X
+        originY: cy, // pivot Y
     }));
 
     // Static arc path – half‑circle from 180° to 0°
@@ -151,17 +147,12 @@ export default function MealGauge({
                     />
 
                     {/* Guitar pick needle (animated group for rotation) */}
-                    <AnimatedG
-                        animatedProps={animatedGroupProps}
-                        originX={cx}
-                        originY={cy}
-                    >
+                    <AnimatedG animatedProps={animatedGroupProps}>
                         <Path
                             d={getPickPath()}
                             fill="#16a34a"
                             opacity={0.95}
-                            x={cx}
-                            y={cy}
+                            transform={`translate(${cx}, ${cy})`}
                         />
                     </AnimatedG>
 
@@ -186,9 +177,7 @@ export default function MealGauge({
                     </SvgText>
                 </Svg>
             </View>
-            {/* <Text className="text-xs text-primary -mt-1 mb-1 text-center">
-                Tap to change grade
-            </Text> */}
+           
         </View>
     );
 }
