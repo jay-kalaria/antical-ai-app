@@ -1,4 +1,4 @@
-import { saveBasicMeal } from "@/services/api/mealService";
+import { useCreateMeal } from "@/hooks/useMeals";
 import { parseAndAnalyzeMeal } from "@/utils/mealParser";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { createContext, useContext, useState } from "react";
@@ -11,6 +11,9 @@ export function MealProvider({ children }) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [transcript, setTranscript] = useState("");
     const queryClient = useQueryClient();
+
+    // Use React Query mutation hook
+    const createMealMutation = useCreateMeal();
 
     const transformMealData = (parsedMeal) => {
         if (!parsedMeal?.dishes) {
@@ -56,7 +59,7 @@ export function MealProvider({ children }) {
             // Transform meal data for saving
             const mealData = {
                 meal_name: newParsedMeal.dishes
-                    .map((dish) => dish.name)
+                    .map((dish) => `${dish.quantity} ${dish.unit} ${dish.name}`)
                     .join(", "),
                 meal_description: mealDescription,
                 meal_grade: newMealAnalysis.grade,
@@ -71,15 +74,12 @@ export function MealProvider({ children }) {
                 additional_nutrients: {},
             };
 
-            // Save to database
-            const savedMeal = await saveBasicMeal(mealData);
+            // Save to database using React Query mutation
+            const savedMeal = await createMealMutation.mutateAsync(mealData);
 
             // Update context state
             setParsedMeal(newParsedMeal);
             setMealAnalysis(newMealAnalysis);
-
-            // Invalidate daily grade query to trigger a refetch
-            await queryClient.invalidateQueries(["dailyGrade"]);
 
             return savedMeal;
         } catch (error) {

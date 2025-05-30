@@ -37,7 +37,15 @@ export function useCreateMeal() {
     return useMutation({
         mutationFn: (meal) => createMeal(meal),
         onSuccess: () => {
+            // Invalidate meals list
             queryClient.invalidateQueries({ queryKey: ["meals"] });
+
+            // Invalidate daily grade for today
+            const today = new Date().toISOString().split("T")[0];
+            queryClient.refetchQueries({
+                queryKey: ["dailyGrade", today],
+                type: "active",
+            });
         },
     });
 }

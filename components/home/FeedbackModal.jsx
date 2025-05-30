@@ -18,7 +18,13 @@ import {
 import NutriScoreBadge from "./NutriScoreBadge";
 
 export default function FeedbackModal({ visible, tip, onClose, onEdit }) {
-    const { getMealMetrics, mealScore, cycleMealScore } = useMeal();
+    const {
+        getMealMetrics,
+        mealScore,
+        cycleMealScore,
+        parsedMeal,
+        //mealAnalysis,
+    } = useMeal();
     const meal = getMealMetrics();
 
     if (!meal) return null;
@@ -140,6 +146,163 @@ export default function FeedbackModal({ visible, tip, onClose, onEdit }) {
 
                                 {showDetails && (
                                     <>
+                                        {/* Individual Dishes Section */}
+                                        {parsedMeal?.dishes &&
+                                            parsedMeal.dishes.length > 0 && (
+                                                <View className="mt-2 border border-gray-200 rounded-lg p-4 w-full mb-4">
+                                                    <Text className="text-base font-semibold text-gray-800 mb-3">
+                                                        Individual Dishes
+                                                    </Text>
+                                                    {parsedMeal.dishes.map(
+                                                        (dish, index) => (
+                                                            <View
+                                                                key={index}
+                                                                className="mb-3 pb-3 border-b border-gray-100 last:border-b-0"
+                                                            >
+                                                                <Text className="text-gray-800 font-medium mb-2">
+                                                                    {
+                                                                        dish.quantity
+                                                                    }{" "}
+                                                                    {dish.unit}{" "}
+                                                                    {dish.name}
+                                                                </Text>
+                                                                {dish.nutrition && (
+                                                                    <View className="ml-2">
+                                                                        <Text className="text-sm text-gray-600">
+                                                                            {[
+                                                                                dish
+                                                                                    .nutrition
+                                                                                    .calories &&
+                                                                                    `Calories: ${Math.round(
+                                                                                        dish
+                                                                                            .nutrition
+                                                                                            .calories
+                                                                                    )}`,
+                                                                                dish
+                                                                                    .nutrition
+                                                                                    .protein_g &&
+                                                                                    `Protein: ${
+                                                                                        Math.round(
+                                                                                            dish
+                                                                                                .nutrition
+                                                                                                .protein_g *
+                                                                                                10
+                                                                                        ) /
+                                                                                        10
+                                                                                    }g`,
+                                                                                dish
+                                                                                    .nutrition
+                                                                                    .carbohydrates_g &&
+                                                                                    `Carbs: ${
+                                                                                        Math.round(
+                                                                                            dish
+                                                                                                .nutrition
+                                                                                                .carbohydrates_g *
+                                                                                                10
+                                                                                        ) /
+                                                                                        10
+                                                                                    }g`,
+                                                                                dish
+                                                                                    .nutrition
+                                                                                    .fat_g &&
+                                                                                    `Fat: ${
+                                                                                        Math.round(
+                                                                                            dish
+                                                                                                .nutrition
+                                                                                                .fat_g *
+                                                                                                10
+                                                                                        ) /
+                                                                                        10
+                                                                                    }g`,
+                                                                            ]
+                                                                                .filter(
+                                                                                    Boolean
+                                                                                )
+                                                                                .join(
+                                                                                    " • "
+                                                                                )}
+                                                                        </Text>
+                                                                        {(dish
+                                                                            .nutrition
+                                                                            .fiber_g ||
+                                                                            dish
+                                                                                .nutrition
+                                                                                .sugar_g ||
+                                                                            dish
+                                                                                .nutrition
+                                                                                .sodium_mg) && (
+                                                                            <Text className="text-sm text-gray-500 mt-1">
+                                                                                {[
+                                                                                    dish
+                                                                                        .nutrition
+                                                                                        .fiber_g &&
+                                                                                        `Fiber: ${
+                                                                                            Math.round(
+                                                                                                dish
+                                                                                                    .nutrition
+                                                                                                    .fiber_g *
+                                                                                                    10
+                                                                                            ) /
+                                                                                            10
+                                                                                        }g`,
+                                                                                    dish
+                                                                                        .nutrition
+                                                                                        .sugar_g &&
+                                                                                        `Sugar: ${
+                                                                                            Math.round(
+                                                                                                dish
+                                                                                                    .nutrition
+                                                                                                    .sugar_g *
+                                                                                                    10
+                                                                                            ) /
+                                                                                            10
+                                                                                        }g`,
+                                                                                    dish
+                                                                                        .nutrition
+                                                                                        .sodium_mg &&
+                                                                                        `Sodium: ${Math.round(
+                                                                                            dish
+                                                                                                .nutrition
+                                                                                                .sodium_mg
+                                                                                        )}mg`,
+                                                                                ]
+                                                                                    .filter(
+                                                                                        Boolean
+                                                                                    )
+                                                                                    .join(
+                                                                                        " • "
+                                                                                    )}
+                                                                            </Text>
+                                                                        )}
+                                                                    </View>
+                                                                )}
+                                                                {dish.ingredients &&
+                                                                    dish
+                                                                        .ingredients
+                                                                        .length >
+                                                                        0 && (
+                                                                        <View className="ml-2 mt-2">
+                                                                            <Text className="text-xs text-gray-500">
+                                                                                Ingredients:{" "}
+                                                                                {dish.ingredients
+                                                                                    .map(
+                                                                                        (
+                                                                                            ing
+                                                                                        ) =>
+                                                                                            ing.name
+                                                                                    )
+                                                                                    .join(
+                                                                                        ", "
+                                                                                    )}
+                                                                            </Text>
+                                                                        </View>
+                                                                    )}
+                                                            </View>
+                                                        )
+                                                    )}
+                                                </View>
+                                            )}
+
                                         {/* Score Calculation Breakdown */}
                                         <View className="mt-2 border border-gray-200 rounded-lg p-4 w-full">
                                             <Text className="text-base font-semibold text-gray-800 mb-3">
