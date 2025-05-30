@@ -72,13 +72,3 @@ export async function getMealNutrition(mealId) {
 
     return data;
 }
-
-export async function saveBasicMeal(mealData) {
-    try {
-        const createdMeal = await createMeal(mealData);
-        return createdMeal;
-    } catch (error) {
-        console.error("Error saving basic meal:", error);
-        throw error;
-    }
-}

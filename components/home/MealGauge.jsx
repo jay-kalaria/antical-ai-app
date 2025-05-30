@@ -11,7 +11,6 @@ import Svg, {
     Circle,
     Defs,
     G,
-    Line,
     LinearGradient,
     Path,
     Stop,
@@ -19,7 +18,6 @@ import Svg, {
 } from "react-native-svg";
 
 const AnimatedG = Animated.createAnimatedComponent(G);
-
 
 // Angle (deg) and brand colour for each score
 const SCORE_CONFIG = {
@@ -53,8 +51,6 @@ export default function MealGauge({
 }) {
     const { data: dailyGrade, isLoading, error } = useDailyGrade();
     const displayScore = dailyGrade?.average_grade || score;
-    //const displayScore = "E";
-    console.log("displayScore", displayScore);
 
     const radius = size / 2 - strokeWidth / 2;
     const cx = size / 2;
@@ -62,12 +58,16 @@ export default function MealGauge({
 
     // Shared animated value for the pointer angle
     const pointerAngle = useSharedValue(
-        SCORE_CONFIG[displayScore]?.angle ?? 90
+        SCORE_CONFIG[displayScore]?.angle ?? SCORE_CONFIG[score]?.angle ?? 0
     );
     const isFirstRender = useRef(true);
 
     useEffect(() => {
-        const targetAngle = SCORE_CONFIG[displayScore]?.angle ?? 90;
+        const targetAngle =
+            SCORE_CONFIG[displayScore]?.angle ??
+            SCORE_CONFIG[score]?.angle ??
+            0;
+
         if (isFirstRender.current) {
             pointerAngle.value = targetAngle; // Set immediately, no animation
             isFirstRender.current = false;
@@ -177,7 +177,6 @@ export default function MealGauge({
                     </SvgText>
                 </Svg>
             </View>
-           
         </View>
     );
 }
