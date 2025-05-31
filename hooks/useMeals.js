@@ -46,6 +46,11 @@ export function useCreateMeal() {
                 queryKey: ["dailyGrade", today],
                 type: "active",
             });
+
+            // Invalidate insights for today
+            queryClient.invalidateQueries({
+                queryKey: ["insights", today],
+            });
         },
     });
 }

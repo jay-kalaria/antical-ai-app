@@ -1,8 +1,65 @@
 import React from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { useInsights } from "../../hooks/useInsights";
 import TipCard from "./TipCard";
 
-export default function InsightsPanel({ tips }) {
+export default function InsightsPanel() {
+    const { data: insights, isLoading, error } = useInsights();
+
+    // Show loading state
+    if (isLoading) {
+        return (
+            <View className="bg-white">
+                <Text className="text-lg font-semibold text-gray-900 ml-1 mb-2">
+                    Want an A today?
+                </Text>
+                <View className="h-32 justify-center items-center">
+                    <ActivityIndicator size="large" color="#16a34a" />
+                    <Text className="text-gray-600 mt-2">
+                        Generating insights...
+                    </Text>
+                </View>
+            </View>
+        );
+    }
+
+    // Show error state with fallback
+    if (error || !insights) {
+        console.error("Error loading insights:", error);
+        // Show fallback tips if there's an error
+        const fallbackTips = [
+            {
+                id: "fallback-1",
+                emoji: "🥗",
+                title: "Eat more vegetables",
+                description:
+                    "Aim to fill half your plate with colorful vegetables.",
+                actionable: true,
+                category: "nutrition",
+            },
+        ];
+
+        return (
+            <View className="bg-white">
+                <Text className="text-lg font-semibold text-gray-900 ml-1 mb-2">
+                    Want an A today?
+                </Text>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    <View className="">
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                        >
+                            {fallbackTips.map((tip) => (
+                                <TipCard key={tip.id} tip={tip} />
+                            ))}
+                        </ScrollView>
+                    </View>
+                </ScrollView>
+            </View>
+        );
+    }
+
     return (
         <View className="bg-white">
             <Text className="text-lg font-semibold text-gray-900 ml-1 mb-2">
@@ -16,7 +73,7 @@ export default function InsightsPanel({ tips }) {
                         horizontal
                         showsHorizontalScrollIndicator={false}
                     >
-                        {tips.map((tip) => (
+                        {insights.map((tip) => (
                             <TipCard key={tip.id} tip={tip} />
                         ))}
                     </ScrollView>

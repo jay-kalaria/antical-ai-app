@@ -81,6 +81,12 @@ export function MealProvider({ children }) {
             setParsedMeal(newParsedMeal);
             setMealAnalysis(newMealAnalysis);
 
+            // Invalidate insights for today to trigger refresh
+            const today = new Date().toISOString().split("T")[0];
+            queryClient.invalidateQueries({
+                queryKey: ["insights", today],
+            });
+
             return savedMeal;
         } catch (error) {
             console.error("Error saving meal:", error);

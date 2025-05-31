@@ -4,15 +4,12 @@ import MealGauge from "@/components/home/MealGauge";
 import RecentlyAdded from "@/components/home/RecentlyAdded";
 import { useMeal } from "@/contexts/MealContext";
 import { useRecording } from "@/contexts/RecordingContext";
-import { mockTips } from "@/utils/archive/mockData_old";
 import { AudioModule } from "expo-audio";
 import React, { useEffect } from "react";
 import { Alert, SafeAreaView, TouchableOpacity, View } from "react-native";
 import "../../global.css";
 
 export default function HomeScreen() {
-    const todaysTips = mockTips.slice(0, 3);
-
     const {
         transcript,
         setTranscript,
@@ -65,7 +62,7 @@ export default function HomeScreen() {
                     <MealGauge />
                 </TouchableOpacity>
                 <View className="w-full bg-white rounded-t-3xl shadow-lg pt-4 pb-14 px-2">
-                    <InsightsPanel tips={todaysTips} />
+                    <InsightsPanel />
                 </View>
             </View>
             <FeedbackModal
