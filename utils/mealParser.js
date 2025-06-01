@@ -240,6 +240,7 @@ export async function parseAndAnalyzeMeal(description) {
             mealAnalysis,
             gradeComment: parsedMeal.gradeComment,
             description,
+            driverReasons: mealAnalysis.driverReasons,
         };
     } catch (error) {
         console.error("Error parsing meal:", error);

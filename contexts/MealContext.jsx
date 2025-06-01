@@ -9,6 +9,8 @@ export function MealProvider({ children }) {
     const [mealAnalysis, setMealAnalysis] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [transcript, setTranscript] = useState("");
+    const [driverReasons, setDriverReasons] = useState([]);
+    const [gradeComment, setGradeComment] = useState("");
 
     // Use React Query mutation hook
     const createMealMutation = useCreateMeal();
@@ -53,6 +55,7 @@ export function MealProvider({ children }) {
                 mealAnalysis: newMealAnalysis,
                 gradeComment,
                 description: mealDescription,
+                driverReasons,
             } = await parseAndAnalyzeMeal(description);
 
             // Transform meal data for saving
@@ -80,7 +83,8 @@ export function MealProvider({ children }) {
             // Update context state
             setParsedMeal(newParsedMeal);
             setMealAnalysis(newMealAnalysis);
-
+            setDriverReasons(driverReasons);
+            setGradeComment(gradeComment);
             // No need to manually invalidate - RealtimeManager handles this automatically
             // when the meal is saved to the database
 
@@ -103,6 +107,8 @@ export function MealProvider({ children }) {
         getMealMetrics,
         parsedMeal,
         mealAnalysis,
+        driverReasons,
+        gradeComment,
     };
 
     return (
