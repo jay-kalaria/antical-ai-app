@@ -1,18 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     createMeal,
-    createMealIngredient,
-    createMealNutrition,
     deleteMeal,
-    deleteMealIngredient,
-    deleteMealNutrition,
     getMealById,
-    getMealIngredients,
-    getMealNutrition,
     getMeals,
     updateMeal,
-    updateMealIngredient,
-    updateMealNutrition,
 } from "../services/api/mealService";
 
 // Meal Hooks
@@ -36,16 +28,32 @@ export function useCreateMeal() {
 
     return useMutation({
         mutationFn: (meal) => createMeal(meal),
-        onSuccess: () => {
-            // Invalidate meals list
-            queryClient.invalidateQueries({ queryKey: ["meals"] });
+        // Optimistic update for better UX
+        onMutate: async (newMeal) => {
+            await queryClient.cancelQueries({ queryKey: ["meals"] });
 
-            // Invalidate daily grade for today
-            const today = new Date().toISOString().split("T")[0];
-            queryClient.refetchQueries({
-                queryKey: ["dailyGrade", today],
-                type: "active",
-            });
+            const previousMeals = queryClient.getQueryData(["meals"]);
+
+            // Optimistically add the meal with a temporary ID
+            const optimisticMeal = {
+                ...newMeal,
+                id: `temp-${Date.now()}`,
+                created_at: new Date().toISOString(),
+            };
+
+            queryClient.setQueryData(["meals"], (old) =>
+                old ? [optimisticMeal, ...old] : [optimisticMeal]
+            );
+
+            return { previousMeals, optimisticMeal };
+        },
+        onError: (err, newMeal, context) => {
+            // Rollback on error
+            queryClient.setQueryData(["meals"], context.previousMeals);
+        },
+        onSettled: () => {
+            // RealtimeManager will handle the final state sync
+            // No need for manual invalidation here
         },
     });
 }
@@ -55,11 +63,36 @@ export function useUpdateMeal() {
 
     return useMutation({
         mutationFn: ({ id, updates }) => updateMeal(id, updates),
-        onSuccess: (updatedMeal) => {
-            queryClient.invalidateQueries({ queryKey: ["meals"] });
-            queryClient.invalidateQueries({
-                queryKey: ["meal", updatedMeal.id],
-            });
+        // Optimistic update
+        onMutate: async ({ id, updates }) => {
+            await queryClient.cancelQueries({ queryKey: ["meals"] });
+            await queryClient.cancelQueries({ queryKey: ["meal", id] });
+
+            const previousMeals = queryClient.getQueryData(["meals"]);
+            const previousMeal = queryClient.getQueryData(["meal", id]);
+
+            // Optimistically update the meals list
+            queryClient.setQueryData(["meals"], (old) =>
+                old
+                    ? old.map((meal) =>
+                          meal.id === id ? { ...meal, ...updates } : meal
+                      )
+                    : []
+            );
+
+            // Optimistically update the specific meal
+            queryClient.setQueryData(["meal", id], (old) =>
+                old ? { ...old, ...updates } : null
+            );
+
+            return { previousMeals, previousMeal };
+        },
+        onError: (err, { id }, context) => {
+            queryClient.setQueryData(["meals"], context.previousMeals);
+            queryClient.setQueryData(["meal", id], context.previousMeal);
+        },
+        onSettled: () => {
+            // RealtimeManager handles the sync
         },
     });
 }
@@ -69,107 +102,24 @@ export function useDeleteMeal() {
 
     return useMutation({
         mutationFn: (id) => deleteMeal(id),
-        onSuccess: (_, id) => {
-            queryClient.invalidateQueries({ queryKey: ["meals"] });
-            queryClient.invalidateQueries({ queryKey: ["meal", id] });
+        // Optimistic update
+        onMutate: async (id) => {
+            await queryClient.cancelQueries({ queryKey: ["meals"] });
+
+            const previousMeals = queryClient.getQueryData(["meals"]);
+
+            // Optimistically remove the meal
+            queryClient.setQueryData(["meals"], (old) =>
+                old ? old.filter((meal) => meal.id !== id) : []
+            );
+
+            return { previousMeals };
         },
-    });
-}
-
-// Meal Ingredients Hooks
-export function useMealIngredients(mealId) {
-    return useQuery({
-        queryKey: ["mealIngredients", mealId],
-        queryFn: () => getMealIngredients(mealId),
-        enabled: !!mealId,
-    });
-}
-
-export function useCreateMealIngredient() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: (ingredient) => createMealIngredient(ingredient),
-        onSuccess: (newIngredient) => {
-            queryClient.invalidateQueries({
-                queryKey: ["mealIngredients", newIngredient.meal_id],
-            });
+        onError: (err, id, context) => {
+            queryClient.setQueryData(["meals"], context.previousMeals);
         },
-    });
-}
-
-export function useUpdateMealIngredient() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: ({ id, updates, mealId }) =>
-            updateMealIngredient(id, updates),
-        onSuccess: (_, { mealId }) => {
-            queryClient.invalidateQueries({
-                queryKey: ["mealIngredients", mealId],
-            });
-        },
-    });
-}
-
-export function useDeleteMealIngredient() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: ({ id, mealId }) => deleteMealIngredient(id),
-        onSuccess: (_, { mealId }) => {
-            queryClient.invalidateQueries({
-                queryKey: ["mealIngredients", mealId],
-            });
-        },
-    });
-}
-
-// Meal Nutrition Hooks
-export function useMealNutrition(mealId) {
-    return useQuery({
-        queryKey: ["mealNutrition", mealId],
-        queryFn: () => getMealNutrition(mealId),
-        enabled: !!mealId,
-    });
-}
-
-export function useCreateMealNutrition() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: (nutrition) => createMealNutrition(nutrition),
-        onSuccess: (newNutrition) => {
-            queryClient.invalidateQueries({
-                queryKey: ["mealNutrition", newNutrition.meal_id],
-            });
-        },
-    });
-}
-
-export function useUpdateMealNutrition() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: ({ id, updates, mealId }) =>
-            updateMealNutrition(id, updates),
-        onSuccess: (_, { mealId }) => {
-            queryClient.invalidateQueries({
-                queryKey: ["mealNutrition", mealId],
-            });
-        },
-    });
-}
-
-export function useDeleteMealNutrition() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: ({ id, mealId }) => deleteMealNutrition(id),
-        onSuccess: (_, { mealId }) => {
-            queryClient.invalidateQueries({
-                queryKey: ["mealNutrition", mealId],
-            });
+        onSettled: () => {
+            // RealtimeManager handles the sync
         },
     });
 }

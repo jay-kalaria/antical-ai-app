@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { useMealIngredients } from "../../hooks/useMealIngredients";
+import { useMealNutrition } from "../../hooks/useMealNutrition";
 import {
     useCreateMeal,
     useDeleteMeal,
     useMeal,
-    useMealIngredients,
-    useMealNutrition,
     useUpdateMeal,
 } from "../../hooks/useMeals";
 import MealGauge from "../home/MealGauge";
@@ -115,6 +115,14 @@ export default function MealEntry({ mealId, onSuccess }) {
             <Pressable onPress={handleGradeChange}>
                 <MealGauge score={currentGrade} />
             </Pressable>
+
+            {/* Display AI-generated grade comment if available */}
+            {meal?.comment && (
+                <View style={styles.commentContainer}>
+                    <Text style={styles.sectionTitle}>Grade Explanation</Text>
+                    <Text style={styles.commentText}>{meal.comment}</Text>
+                </View>
+            )}
 
             {/* Display nutrition summary if available */}
             {nutrition && (
@@ -240,5 +248,19 @@ const styles = StyleSheet.create({
         color: "white",
         fontWeight: "bold",
         fontSize: 16,
+    },
+    commentContainer: {
+        marginTop: 16,
+        padding: 12,
+        backgroundColor: "#e8f5e8",
+        borderRadius: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: "#24C08B",
+    },
+    commentText: {
+        fontSize: 14,
+        color: "#4a5568",
+        lineHeight: 20,
+        fontStyle: "italic",
     },
 });

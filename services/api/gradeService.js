@@ -17,6 +17,18 @@ export const fetchDailyGrade = async (date = new Date()) => {
                 average_grade: dailyGrade.average_grade,
                 meal_count: dailyGrade.meal_count,
                 grade_score: dailyGrade.grade_score,
+                // Include all nutrition totals from daily_grades table
+                total_calories: dailyGrade.total_calories,
+                total_protein: dailyGrade.total_protein,
+                total_carbs: dailyGrade.total_carbs,
+                total_fat: dailyGrade.total_fat,
+                total_sugar: dailyGrade.total_sugar,
+                total_fiber: dailyGrade.total_fiber,
+                total_sodium: dailyGrade.total_sodium,
+                // Add the stored AI explanation
+                ai_explanation: dailyGrade.ai_explanation,
+                ai_key_factors: dailyGrade.ai_key_factors,
+                explanation_source: dailyGrade.explanation_source,
                 source: "daily_grades",
             };
         }

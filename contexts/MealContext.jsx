@@ -1,6 +1,5 @@
 import { useCreateMeal } from "@/hooks/useMeals";
 import { parseAndAnalyzeMeal } from "@/utils/mealParser";
-import { useQueryClient } from "@tanstack/react-query";
 import React, { createContext, useContext, useState } from "react";
 
 const MealContext = createContext();
@@ -10,7 +9,6 @@ export function MealProvider({ children }) {
     const [mealAnalysis, setMealAnalysis] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [transcript, setTranscript] = useState("");
-    const queryClient = useQueryClient();
 
     // Use React Query mutation hook
     const createMealMutation = useCreateMeal();
@@ -53,6 +51,7 @@ export function MealProvider({ children }) {
             const {
                 parsedMeal: newParsedMeal,
                 mealAnalysis: newMealAnalysis,
+                gradeComment,
                 description: mealDescription,
             } = await parseAndAnalyzeMeal(description);
 
@@ -63,6 +62,7 @@ export function MealProvider({ children }) {
                     .join(", "),
                 meal_description: mealDescription,
                 meal_grade: newMealAnalysis.grade,
+                comment: gradeComment,
                 meal_date: new Date().toISOString(),
                 calories: newParsedMeal.totalNutrition?.calories || null,
                 protein: newParsedMeal.totalNutrition?.protein_g || null,
@@ -80,6 +80,9 @@ export function MealProvider({ children }) {
             // Update context state
             setParsedMeal(newParsedMeal);
             setMealAnalysis(newMealAnalysis);
+
+            // No need to manually invalidate - RealtimeManager handles this automatically
+            // when the meal is saved to the database
 
             return savedMeal;
         } catch (error) {

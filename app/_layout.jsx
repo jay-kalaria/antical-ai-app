@@ -3,7 +3,6 @@ import {
     DefaultTheme,
     ThemeProvider,
 } from "@react-navigation/native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -12,9 +11,32 @@ import "react-native-reanimated";
 import { MealProvider } from "@/contexts/MealContext";
 import { RecordingProvider } from "@/contexts/RecordingContext";
 import { useColorScheme } from "@/hooks/archive/useColorScheme";
+import { useRealtime } from "@/hooks/useRealtime";
+import { QueryProvider } from "@/utils/QueryProvider";
 
-// Create a client
-const queryClient = new QueryClient();
+// Component that uses the realtime hook after QueryProvider is available
+function AppContent() {
+    // Initialize real-time subscriptions
+    const realtimeStatus = useRealtime({
+        pauseOnBackground: true, // Pause real-time when app is backgrounded
+        autoConnect: true, // Auto-connect on app start
+    });
+
+    return (
+        <MealProvider>
+            <RecordingProvider>
+                <Stack>
+                    <Stack.Screen
+                        name="(tabs)"
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen name="+not-found" />
+                </Stack>
+                <StatusBar style="auto" />
+            </RecordingProvider>
+        </MealProvider>
+    );
+}
 
 export default function RootLayout() {
     const colorScheme = useColorScheme();
@@ -28,25 +50,12 @@ export default function RootLayout() {
     }
 
     return (
-        <QueryClientProvider client={queryClient}>
-            <MealProvider>
-                <RecordingProvider>
-                    <ThemeProvider
-                        value={
-                            colorScheme === "dark" ? DarkTheme : DefaultTheme
-                        }
-                    >
-                        <Stack>
-                            <Stack.Screen
-                                name="(tabs)"
-                                options={{ headerShown: false }}
-                            />
-                            <Stack.Screen name="+not-found" />
-                        </Stack>
-                        <StatusBar style="auto" />
-                    </ThemeProvider>
-                </RecordingProvider>
-            </MealProvider>
-        </QueryClientProvider>
+        <QueryProvider>
+            <ThemeProvider
+                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+                <AppContent />
+            </ThemeProvider>
+        </QueryProvider>
     );
 }
