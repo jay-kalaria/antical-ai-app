@@ -1,116 +1,202 @@
 import Colors from "@/constants/Colors";
 import Layout from "@/constants/Layout";
-import { mockMeals } from "@/utils/archive/mockData_old";
+import { useStoredExplanationsHistory } from "@/hooks/useStoredExplanations";
 import React, { useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
-
-const FILTERS = [
-    { id: "all", label: "All" },
-    { id: "high-protein", label: "High protein" },
-    { id: "low-sugar", label: "Low sugar" },
-    { id: "homemade", label: "Homemade" },
-];
-
-// Mock data for the new design
-const WEEKLY_FEEDBACK = [
-    {
-        day: "Mon",
-        feedback: "Great mix of **veggies and lentils** — balanced and fresh!",
-        grade: "A",
-        color: Colors.nutriScore.A,
-    },
-    {
-        day: "Tue",
-        feedback:
-            "**Eggs and salad** kept things clean and filling. Well done!",
-        grade: "A",
-        color: Colors.nutriScore.A,
-    },
-    {
-        day: "Wed",
-        feedback: "Too much **white bread, not enough fiber**-rich foods.",
-        grade: "C",
-        color: Colors.nutriScore.C,
-    },
-    {
-        day: "Thu",
-        feedback: "The **noodles** — try adding some veggies next time.",
-        grade: "E",
-        color: Colors.nutriScore.E,
-    },
-    {
-        day: "Fri",
-        feedback:
-            "Meals were complete! Just a bit **heavy with the pastry and chips**.",
-        grade: "B",
-        color: Colors.nutriScore.B,
-    },
-    // Add Sat/Sun as needed
-];
+import {
+    ActivityIndicator,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
 
 export default function HistoryScreen() {
-    const [selectedFilter, setSelectedFilter] = useState("all");
+    const [refreshing, setRefreshing] = useState(false);
 
-    const getFilteredMeals = () => {
-        switch (selectedFilter) {
-            case "high-protein":
-                return mockMeals.filter((meal) => meal.protein >= 20);
-            case "low-sugar":
-                // For mock purposes, we'll just use a subset of meals
-                return mockMeals.filter((_, index) => index % 3 === 0);
-            case "homemade":
-                return mockMeals.filter((meal) => meal.isHomemade);
+    // Fetch daily explanations for the past 7 days
+    const {
+        data: dailyExplanations,
+        isLoading,
+        error,
+        refetch,
+    } = useStoredExplanationsHistory(7);
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await refetch();
+        setRefreshing(false);
+    };
+
+    // Get grade color from your existing color system
+    const getGradeColor = (grade) => {
+        switch (grade) {
+            case "A":
+                return Colors.nutriScore?.A || "#24C08B";
+            case "B":
+                return Colors.nutriScore?.B || "#8BC34A";
+            case "C":
+                return Colors.nutriScore?.C || "#FFC107";
+            case "D":
+                return Colors.nutriScore?.D || "#FF9800";
+            case "E":
+                return Colors.nutriScore?.E || "#F44336";
             default:
-                return mockMeals;
+                return "#9CA3AF"; // Gray for no data
         }
     };
 
-    const filteredMeals = getFilteredMeals();
-
-    const handleMealPress = (meal) => {
-        // Handle meal selection
-        console.log("Selected meal:", meal.name);
+    // Format the statement to highlight key terms (remove ** formatting)
+    const formatStatement = (statement) => {
+        return statement?.replace(/\*\*(.*?)\*\*/g, "$1") || "";
     };
 
-    // Optionally, determine the current day to highlight
-    const todayIndex = new Date().getDay() - 1; // 0 = Monday
+    // Determine current day for highlighting
+    const todayIndex = 0; // Today is always the first item (index 0)
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>History</Text>
+                </View>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator
+                        size="large"
+                        color={Colors.primary || "#24C08B"}
+                    />
+                    <Text style={styles.loadingText}>
+                        Loading your nutrition history...
+                    </Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (error) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>History</Text>
+                </View>
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>Unable to load history</Text>
+                    <Text style={styles.errorSubtext}>
+                        Please check your connection and try again
+                    </Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>History</Text>
+                <Text style={styles.subtitle}>
+                    Your daily nutrition grades and insights
+                </Text>
             </View>
-            <ScrollView contentContainerStyle={styles.listContent}>
-                {WEEKLY_FEEDBACK.map((item, idx) => (
-                    <View key={item.day} style={{ marginBottom: 16 }}>
+            <ScrollView
+                contentContainerStyle={styles.listContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        tintColor={Colors.primary || "#24C08B"}
+                    />
+                }
+            >
+                {dailyExplanations?.map((item, idx) => (
+                    <View key={item.date} style={{ marginBottom: 16 }}>
                         <Text
                             style={[
                                 styles.dayLabel,
                                 idx === todayIndex && styles.dayLabelActive,
                             ]}
                         >
-                            {item.day}
+                            {item.dayName}
+                            {idx === todayIndex && (
+                                <Text style={styles.todayIndicator}>
+                                    {" "}
+                                    (Today)
+                                </Text>
+                            )}
                         </Text>
                         <View style={styles.card}>
-                            <Text style={styles.feedbackText}>
-                                {item.feedback.replace(
-                                    /\*\*(.*?)\*\*/g,
-                                    (m, p1) => p1
-                                )}
-                            </Text>
+                            <View style={styles.cardContent}>
+                                <Text style={styles.feedbackText}>
+                                    {formatStatement(item.statement)}
+                                </Text>
+
+                                {/* Show key factors if available */}
+                                {item.keyFactors &&
+                                    item.keyFactors.length > 0 && (
+                                        <View style={styles.factorsContainer}>
+                                            {item.keyFactors
+                                                .slice(0, 2)
+                                                .map((factor, factorIdx) => (
+                                                    <View
+                                                        key={factorIdx}
+                                                        style={[
+                                                            styles.factorChip,
+                                                            factor.type ===
+                                                                "positive" &&
+                                                                styles.factorPositive,
+                                                            factor.type ===
+                                                                "negative" &&
+                                                                styles.factorNegative,
+                                                        ]}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.factorText,
+                                                                factor.type ===
+                                                                    "positive" &&
+                                                                    styles.factorTextPositive,
+                                                                factor.type ===
+                                                                    "negative" &&
+                                                                    styles.factorTextNegative,
+                                                            ]}
+                                                        >
+                                                            {factor.text}
+                                                        </Text>
+                                                    </View>
+                                                ))}
+                                        </View>
+                                    )}
+                            </View>
+
                             <View
                                 style={[
                                     styles.gradeCircle,
-                                    { backgroundColor: item.color },
+                                    {
+                                        backgroundColor: getGradeColor(
+                                            item.grade
+                                        ),
+                                    },
                                 ]}
                             >
                                 <Text style={styles.gradeText}>
-                                    {item.grade}
+                                    {item.grade || "?"}
                                 </Text>
                             </View>
                         </View>
                     </View>
                 ))}
+
+                {/* Show empty state if no data */}
+                {(!dailyExplanations || dailyExplanations.length === 0) && (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyStateText}>
+                            Start logging meals to see your history
+                        </Text>
+                        <Text style={styles.emptyStateSubtext}>
+                            Your daily grades and insights will appear here
+                        </Text>
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     );
@@ -129,7 +215,42 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 22,
         fontWeight: "700",
-        color: Colors.gray[900],
+        color: Colors.gray?.[900] || "#1F2937",
+    },
+    subtitle: {
+        fontSize: 14,
+        color: Colors.gray?.[600] || "#6B7280",
+        marginTop: 4,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: Layout.spacing.lg,
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: Colors.gray?.[600] || "#6B7280",
+        textAlign: "center",
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: Layout.spacing.lg,
+    },
+    errorText: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: Colors.gray?.[900] || "#1F2937",
+        textAlign: "center",
+    },
+    errorSubtext: {
+        marginTop: 8,
+        fontSize: 14,
+        color: Colors.gray?.[600] || "#6B7280",
+        textAlign: "center",
     },
     listContent: {
         paddingHorizontal: Layout.spacing.lg,
@@ -138,16 +259,21 @@ const styles = StyleSheet.create({
     dayLabel: {
         fontSize: 16,
         fontWeight: "500",
-        color: Colors.gray[800],
+        color: Colors.gray?.[800] || "#374151",
         marginBottom: 4,
     },
     dayLabelActive: {
         fontWeight: "700",
-        textDecorationLine: "underline",
+        color: Colors.primary || "#24C08B",
+    },
+    todayIndicator: {
+        fontSize: 14,
+        fontWeight: "500",
+        color: Colors.gray?.[600] || "#6B7280",
     },
     card: {
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-start",
         backgroundColor: "#fff",
         borderRadius: 20,
         padding: 18,
@@ -159,11 +285,44 @@ const styles = StyleSheet.create({
         borderColor: "#d6f5c9",
         marginBottom: 4,
     },
-    feedbackText: {
+    cardContent: {
         flex: 1,
+        marginRight: 16,
+    },
+    feedbackText: {
         fontSize: 16,
-        color: Colors.gray[900],
+        color: Colors.gray?.[900] || "#1F2937",
         fontWeight: "400",
+        lineHeight: 22,
+    },
+    factorsContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        marginTop: 12,
+        gap: 6,
+    },
+    factorChip: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        backgroundColor: Colors.gray?.[100] || "#F3F4F6",
+    },
+    factorPositive: {
+        backgroundColor: "#DCFCE7", // Light green
+    },
+    factorNegative: {
+        backgroundColor: "#FEE2E2", // Light red
+    },
+    factorText: {
+        fontSize: 12,
+        fontWeight: "500",
+        color: Colors.gray?.[700] || "#374151",
+    },
+    factorTextPositive: {
+        color: "#166534", // Dark green
+    },
+    factorTextNegative: {
+        color: "#991B1B", // Dark red
     },
     gradeCircle: {
         width: 48,
@@ -171,11 +330,31 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: 16,
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     gradeText: {
         color: "#fff",
         fontWeight: "700",
         fontSize: 22,
+    },
+    emptyState: {
+        alignItems: "center",
+        paddingVertical: 60,
+        paddingHorizontal: 20,
+    },
+    emptyStateText: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: Colors.gray?.[900] || "#1F2937",
+        textAlign: "center",
+        marginBottom: 8,
+    },
+    emptyStateSubtext: {
+        fontSize: 14,
+        color: Colors.gray?.[600] || "#6B7280",
+        textAlign: "center",
     },
 });

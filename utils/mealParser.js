@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
 import OpenAI from "openai";
-import { calculateMealAnalysis } from "./mealGradeCalculator";
+import { calculateMealAnalysis } from "./mealGradeCalculator.js";
 
 const OPENAI_API_KEY =
     Constants.expoConfig?.extra?.openaiApiKey || process.env.OPENAI_API_KEY;
@@ -70,8 +70,13 @@ const mealParserSchema = {
                 properties: NUTRITION_FIELDS,
                 required: Object.keys(NUTRITION_FIELDS),
             },
+            gradeComment: {
+                type: "string",
+                description:
+                    "A personalized, encouraging comment about the meal's nutritional quality. Should be specific to the foods mentioned and highlight positive aspects while giving constructive feedback. Keep it under 15 words and reference actual foods when possible.",
+            },
         },
-        required: ["dishes", "totalNutrition"],
+        required: ["dishes", "totalNutrition", "gradeComment"],
     },
 };
 
@@ -116,7 +121,27 @@ export async function parseMealDescription(
                     3. Break down multi-component meals into individual items
                     4. Calculate nutrition for each component separately
                     5. Provide accurate nutritional information based on standard food databases
-                    6. Return a strictly formatted JSON response with all components and total nutrition`
+                    6. Return a strictly formatted JSON response with all components and total nutrition
+                    
+                    For the gradeComment field:
+                    - Analyze the total nutrition to determine what grade this meal would likely receive (A=excellent, B=good, C=average, D=poor, E=very poor)
+                    - Write a personalized, encouraging comment that:
+                      * References specific foods from the meal when possible
+                      * Highlights nutritional positives (high protein, fiber, vitamins, etc.)
+                      * Gives constructive feedback for improvement if needed
+                      * Maintains an encouraging, friendly tone
+                      * Stays under 50 words
+                      * Uses grade-appropriate language:
+                        - A grade: "Excellent choice!" "Fantastic nutrition!"
+                        - B grade: "Great meal!" "Well balanced!"
+                        - C grade: "Good start!" "Nice balance, could be improved with..."
+                        - D grade: "Consider adding..." "Try balancing with..."
+                        - E grade: "Small changes can make a big difference, try..."
+                    
+                    Examples:
+                    - "Great choice! Your salmon and quinoa combo provides excellent protein (28g) and fiber. The sweet potato adds valuable vitamins too!"
+                    - "Good start with the chicken salad! Consider adding nuts or avocado next time to boost healthy fats and make it more filling."
+                    - "Your veggie stir-fry is packed with nutrients! The high fiber (12g) and moderate calories make this a nutritious choice."`
                             : ""
                     }`,
                 },
@@ -174,6 +199,14 @@ export async function parseMealDescription(
                 parsedMeal.totalNutrition,
                 "total nutrition"
             );
+
+            // Validate gradeComment field
+            if (
+                !parsedMeal.gradeComment ||
+                typeof parsedMeal.gradeComment !== "string"
+            ) {
+                throw new Error("Missing or invalid gradeComment field");
+            }
         }
 
         return parsedMeal;
@@ -205,6 +238,7 @@ export async function parseAndAnalyzeMeal(description) {
         return {
             parsedMeal,
             mealAnalysis,
+            gradeComment: parsedMeal.gradeComment,
             description,
         };
     } catch (error) {

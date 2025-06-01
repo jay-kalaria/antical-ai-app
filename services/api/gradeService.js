@@ -25,6 +25,10 @@ export const fetchDailyGrade = async (date = new Date()) => {
                 total_sugar: dailyGrade.total_sugar,
                 total_fiber: dailyGrade.total_fiber,
                 total_sodium: dailyGrade.total_sodium,
+                // Add the stored AI explanation
+                ai_explanation: dailyGrade.ai_explanation,
+                ai_key_factors: dailyGrade.ai_key_factors,
+                explanation_source: dailyGrade.explanation_source,
                 source: "daily_grades",
             };
         }
