@@ -8,6 +8,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
+import { AuthProvider } from "@/contexts/AuthContext";
 import { MealProvider } from "@/contexts/MealContext";
 import { RecordingProvider } from "@/contexts/RecordingContext";
 import { useColorScheme } from "@/hooks/archive/useColorScheme";
@@ -23,18 +24,28 @@ function AppContent() {
     });
 
     return (
-        <MealProvider>
-            <RecordingProvider>
-                <Stack>
-                    <Stack.Screen
-                        name="(tabs)"
-                        options={{ headerShown: false }}
-                    />
-                    <Stack.Screen name="+not-found" />
-                </Stack>
-                <StatusBar style="auto" />
-            </RecordingProvider>
-        </MealProvider>
+        <AuthProvider>
+            <MealProvider>
+                <RecordingProvider>
+                    <Stack>
+                        <Stack.Screen
+                            name="index"
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name="(auth)"
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name="(tabs)"
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen name="+not-found" />
+                    </Stack>
+                    <StatusBar style="auto" />
+                </RecordingProvider>
+            </MealProvider>
+        </AuthProvider>
     );
 }
 

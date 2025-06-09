@@ -5,12 +5,12 @@ config();
 
 export default {
     expo: {
-        name: "MealGrade",
-        slug: "MealGrade",
+        name: "Nutricado",
+        slug: "Nutricado",
         version: "1.0.0",
         orientation: "portrait",
         icon: "./assets/images/icon.png",
-        scheme: "mealgrade",
+        scheme: "nutricado",
         userInterfaceStyle: "automatic",
         newArchEnabled: true,
         splash: {
@@ -22,14 +22,14 @@ export default {
         assetBundlePatterns: ["**/*"],
         ios: {
             supportsTablet: true,
-            bundleIdentifier: "com.mealgrade.app",
+            bundleIdentifier: "com.nutricado.app",
         },
         android: {
             adaptiveIcon: {
                 foregroundImage: "./assets/images/adaptive-icon.png",
                 backgroundColor: "#ffffff",
             },
-            package: "com.mealgrade.app",
+            package: "com.nutricado.app",
             edgeToEdgeEnabled: true,
         },
         web: {
@@ -39,6 +39,7 @@ export default {
         },
         plugins: [
             "expo-router",
+            "expo-web-browser",
             [
                 "expo-splash-screen",
                 {
@@ -61,6 +62,9 @@ export default {
         },
         extra: {
             openaiApiKey: process.env.OPENAI_API_KEY,
+            eas: {
+                projectId: "d98f4252-ee39-47c9-b040-acba707abe55",
+            },
         },
     },
 };
