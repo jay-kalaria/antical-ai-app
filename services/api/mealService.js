@@ -2,9 +2,18 @@ import { supabase } from "../../utils/supabase";
 
 // Meals API
 export async function getMeals() {
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error("User not authenticated");
+    }
+
     const { data, error } = await supabase
         .from("meal_logs")
         .select("*")
+        .eq("user_id", user.id)
         .order("meal_date", { ascending: false });
 
     if (error) {
@@ -54,9 +63,22 @@ export async function deleteMeal(id) {
 }
 
 export async function createMeal(meal) {
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error("User not authenticated");
+    }
+
+    const mealWithUser = {
+        ...meal,
+        user_id: user.id,
+    };
+
     const { data, error } = await supabase
         .from("meal_logs")
-        .insert([meal])
+        .insert([mealWithUser])
         .select()
         .single();
 
