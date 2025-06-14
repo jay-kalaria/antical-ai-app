@@ -1,5 +1,9 @@
 import { useCreateMeal } from "@/hooks/useMeals";
-import { parseAndAnalyzeMeal } from "@/utils/mealParser";
+import {
+    FoodRecognitionError,
+    NonFoodInputError,
+    parseAndAnalyzeMeal,
+} from "@/utils/mealParser";
 import React, { createContext, useContext, useState } from "react";
 
 const MealContext = createContext();
@@ -11,6 +15,9 @@ export function MealProvider({ children }) {
     const [transcript, setTranscript] = useState("");
     const [driverReasons, setDriverReasons] = useState([]);
     const [gradeComment, setGradeComment] = useState("");
+    const [errorState, setErrorState] = useState(null);
+    const [showCustomAlert, setShowCustomAlert] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({});
 
     // Use React Query mutation hook
     const createMealMutation = useCreateMeal();
@@ -45,11 +52,28 @@ export function MealProvider({ children }) {
         };
     };
 
+    // Function to show custom alert instead of error banner
+    const showAlert = (
+        title,
+        message,
+        showCancel = false,
+        onConfirm = null
+    ) => {
+        setAlertConfig({
+            title,
+            message,
+            showCancel,
+            onConfirm: onConfirm || (() => setShowCustomAlert(false)),
+            onCancel: () => setShowCustomAlert(false),
+        });
+        setShowCustomAlert(true);
+    };
+
     const saveMeal = async (description) => {
         try {
             setIsProcessing(true);
+            setErrorState(null);
 
-            // Parse and analyze the meal
             const {
                 parsedMeal: newParsedMeal,
                 mealAnalysis: newMealAnalysis,
@@ -58,10 +82,12 @@ export function MealProvider({ children }) {
                 driverReasons,
             } = await parseAndAnalyzeMeal(description);
 
-            // Transform meal data for saving
             const mealData = {
                 meal_name: newParsedMeal.dishes
-                    .map((dish) => `${dish.quantity} ${dish.unit} ${dish.name}`)
+                    .map(
+                        (dish) =>
+                            `${dish.emoji} ${dish.quantity} ${dish.unit} ${dish.name}`
+                    )
                     .join(", "),
                 meal_description: mealDescription,
                 meal_grade: newMealAnalysis.grade,
@@ -77,24 +103,42 @@ export function MealProvider({ children }) {
                 additional_nutrients: {},
             };
 
-            // Save to database using React Query mutation
             const savedMeal = await createMealMutation.mutateAsync(mealData);
 
-            // Update context state
             setParsedMeal(newParsedMeal);
             setMealAnalysis(newMealAnalysis);
             setDriverReasons(driverReasons);
             setGradeComment(gradeComment);
-            // No need to manually invalidate - RealtimeManager handles this automatically
-            // when the meal is saved to the database
 
             return savedMeal;
         } catch (error) {
-            console.error("Error saving meal:", error);
+            if (error instanceof FoodRecognitionError) {
+                //setErrorState({ type: "FOOD_RECOGNITION" });
+                // Option to show custom alert instead:
+                showAlert(
+                    "Food Recognition Issue",
+                    "I couldn't understand the food you described. Please try again with more specific details."
+                );
+            } else if (error instanceof NonFoodInputError) {
+                //setErrorState({ type: "NON_FOOD_INPUT" });
+                // Option to show custom alert instead:
+                showAlert(
+                    "Not Food Related",
+                    "Please describe a meal or food items you'd like me to analyze."
+                );
+            } else {
+                setErrorState({ type: "GENERAL_ERROR" });
+                // Option to show custom alert instead:
+                showAlert("Error", "Something went wrong. Please try again.");
+            }
             throw error;
         } finally {
             setIsProcessing(false);
         }
+    };
+
+    const clearError = () => {
+        setErrorState(null);
     };
 
     const getMealMetrics = () => transformMealData(parsedMeal);
@@ -109,6 +153,12 @@ export function MealProvider({ children }) {
         mealAnalysis,
         driverReasons,
         gradeComment,
+        errorState,
+        clearError,
+        showCustomAlert,
+        setShowCustomAlert,
+        alertConfig,
+        showAlert,
     };
 
     return (

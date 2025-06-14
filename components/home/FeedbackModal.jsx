@@ -1,388 +1,404 @@
-import Colors from "@/constants/Colors";
 import { useMeal } from "@/contexts/MealContext";
-import {
-    calculateMealAnalysis,
-    getScoreForGrade,
-} from "@/utils/mealGradeCalculator";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import React, { useMemo, useState } from "react";
-import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import NutriScoreBadge from "./NutriScoreBadge";
 import { BlurView } from "expo-blur";
+import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from "react";
+import {
+    Alert,
+    Animated,
+    Dimensions,
+    Modal,
+    ScrollView,
+    Share,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+
+const { width } = Dimensions.get("window");
 
 export default function FeedbackModal({ visible, tip, onClose, onEdit }) {
     const {
         getMealMetrics,
-        mealScore,
-        cycleMealScore,
         parsedMeal,
         driverReasons,
         gradeComment,
-        //mealAnalysis,
+        mealAnalysis,
     } = useMeal();
     const meal = getMealMetrics();
 
     if (!meal) return null;
 
-    // States to track badge grades for animation testing
-    const [nutriScoreGrade, setNutriScoreGrade] = useState(
-        meal.nutriScore || "C"
-    );
     const [showDetails, setShowDetails] = useState(false);
+    const [shareLoading, setShareLoading] = useState(false);
 
-    // Calculate meal score and grade based on the provided rules
-    const mealAnalysis = useMemo(() => {
-        return calculateMealAnalysis(meal);
-    }, [meal]);
+    // Get grade and score from context mealAnalysis
+    const mealScoreGrade = mealAnalysis?.grade || "NA";
+    const mealScoreValue = mealAnalysis?.score || 0;
 
-    // State for the meal score grade with initial value from mealAnalysis
-    const [mealScoreGrade, setMealScoreGrade] = useState(mealAnalysis.grade);
-    const [mealScoreValue, setMealScoreValue] = useState(mealAnalysis.score);
+    // Animation values
+    const bounceAnim = useState(new Animated.Value(0))[0];
+    const fadeAnim = useState(new Animated.Value(0))[0];
 
-    // Function to cycle through grades
-    const cycleGrade = (currentGrade, setGradeFunction) => {
-        const grades = ["A", "B", "C", "D", "E"];
-        const currentIndex = grades.indexOf(currentGrade);
-        const nextIndex = (currentIndex + 1) % grades.length;
-        setGradeFunction(grades[nextIndex]);
+    // Start animations when modal opens
+    React.useEffect(() => {
+        if (visible) {
+            Animated.parallel([
+                Animated.spring(bounceAnim, {
+                    toValue: 1,
+                    useNativeDriver: true,
+                    tension: 50,
+                    friction: 8,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        } else {
+            bounceAnim.setValue(0);
+            fadeAnim.setValue(0);
+        }
+    }, [visible]);
 
-        // Add haptic feedback
-        try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch (e) {
-            console.log("Haptics not available");
+    // Get gradient colors based on grade
+    const getGradientColors = (grade) => {
+        switch (grade) {
+            case "A":
+                return ["#22c55e", "#16a34a"]; // Green
+            case "B":
+                return ["#84cc16", "#65a30d"]; // Lime
+            case "C":
+                return ["#eab308", "#ca8a04"]; // Yellow
+            case "D":
+                return ["#f97316", "#ea580c"]; // Orange
+            case "E":
+                return ["#ef4444", "#dc2626"]; // Red
+            default:
+                return ["#6b7280", "#4b5563"]; // Gray
         }
     };
 
-    // Update score when mealScoreGrade changes
-    React.useEffect(() => {
-        setMealScoreValue(getScoreForGrade(mealScoreGrade));
-    }, [mealScoreGrade]);
+    // Share functionality
+    const handleShare = async () => {
+        try {
+            setShareLoading(true);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+            const shareMessage = `🥑 Just got my meal analyzed!\n\n${
+                meal.name
+            }\nMeal Grade: ${mealScoreGrade}\n\n${
+                gradeComment ? gradeComment + "\n\n" : ""
+            }#MealGrade #HealthyEating #Nutricado`;
+
+            const result = await Share.share({
+                message: shareMessage,
+                title: "My Meal Grade",
+            });
+
+            if (result.action === Share.sharedAction) {
+                // Shared successfully
+                await Haptics.notificationAsync(
+                    Haptics.NotificationFeedbackType.Success
+                );
+            }
+        } catch (error) {
+            Alert.alert("Error", "Unable to share at this time");
+        } finally {
+            setShareLoading(false);
+        }
+    };
+
+    const gradientColors = getGradientColors(mealScoreGrade);
 
     return (
         <Modal
             visible={visible}
             transparent={true}
-            
-            animationType="slide"
+            animationType="none"
             onRequestClose={onClose}
         >
-            <BlurView intensity={40} tint="dark" className="flex-1 justify-end">
-                <View className="bg-white rounded-t-3xl pb-[30px]">
-                    {/* <View className="flex-row items-center justify-between p-4 border-b border-gray-100">
-                            <Text className="text-lg font-semibold text-gray-900">
-                                Meal Analysis
+            <BlurView intensity={50} tint="dark" className="flex-1 justify-end">
+                <Animated.View
+                    style={{
+                        transform: [
+                            {
+                                translateY: bounceAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [400, 0],
+                                }),
+                            },
+                        ],
+                        opacity: fadeAnim,
+                    }}
+                    className="rounded-t-3xl overflow-hidden"
+                >
+                    {/* Hero Section with Gradient */}
+                    <LinearGradient
+                        colors={[...gradientColors, "#ffffff"]}
+                        locations={[0, 0.4, 1]}
+                        className="pt-6 pb-8"
+                    >
+                        {/* Close Button */}
+                        <TouchableOpacity
+                            onPress={onClose}
+                            className="absolute top-4 right-4 z-10 w-8 h-8 bg-black/20 rounded-full items-center justify-center"
+                            style={{ marginTop: 8 }}
+                        >
+                            <Ionicons name="close" size={20} color="white" />
+                        </TouchableOpacity>
+
+                        {/* Main Grade Display */}
+                        <View className="items-center px-6 pt-8">
+                            <Text className="text-white/80 text-sm font-medium mb-8 text-center uppercase tracking-wider">
+                                YOUR MEAL GRADE
                             </Text>
-                            <TouchableOpacity onPress={onClose} className="p-1">
+
+                            {/* Grade Letter */}
+                            <Animated.View
+                                style={{
+                                    transform: [
+                                        {
+                                            scale: bounceAnim.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [0.8, 1],
+                                            }),
+                                        },
+                                    ],
+                                }}
+                                className="w-32 h-32 bg-white/20 rounded-full items-center justify-center border-4 border-white/30 mb-6"
+                            >
+                                <Text className="text-white text-8xl font-black">
+                                    {mealScoreGrade}
+                                </Text>
+                            </Animated.View>
+
+                            <Text
+                                className="text-white text-xl font-bold text-center mb-6"
+                                numberOfLines={2}
+                                ellipsizeMode="tail"
+                            >
+                                {meal.name}
+                            </Text>
+                        </View>
+
+                        {/* Share Button - Prominent */}
+                        <View className="px-6">
+                            <TouchableOpacity
+                                onPress={handleShare}
+                                disabled={shareLoading}
+                                className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl py-4 flex-row items-center justify-center"
+                                style={{ opacity: shareLoading ? 0.7 : 1 }}
+                            >
                                 <Ionicons
-                                    name="close"
-                                    size={24}
-                                    color={Colors.gray[500]}
+                                    name={
+                                        shareLoading
+                                            ? "hourglass"
+                                            : "share-outline"
+                                    }
+                                    size={20}
+                                    color="white"
                                 />
+                                <Text className="text-white font-semibold text-base ml-2">
+                                    {shareLoading
+                                        ? "Sharing..."
+                                        : "Share My Grade"}
+                                </Text>
                             </TouchableOpacity>
-                        </View> */}
+                        </View>
+                    </LinearGradient>
 
-                    <ScrollView className="max-h-[400px]">
-                        <View className="p-4">
-                            <View className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-                                <View className="flex-row items-center justify-between">
-                                    <View className="flex-1 mr-4">
-                                        <Text
-                                            className="text-[22px] font-bold text-gray-900"
-                                            ellipsizeMode="tail"
-                                        >
-                                            {meal.name}
-                                        </Text>
-                                        {/* {meal.calories !== undefined && (
-                                                <Text className="text-base text-gray-700 mt-1">
-                                                    Total Calories:{" "}
-                                                    <Text className="font-semibold">
-                                                        {meal.calories}
-                                                    </Text>
-                                                </Text>
-                                            )} */}
-                                    </View>
-                                    <TouchableOpacity
-                                        onPress={() =>
-                                            cycleGrade(
-                                                mealScoreGrade,
-                                                setMealScoreGrade
-                                            )
-                                        }
-                                        activeOpacity={0.8}
-                                    >
-                                        <NutriScoreBadge
-                                            grade={mealScoreGrade}
-                                            size="large"
-                                            score={mealScoreValue}
-                                            showScore={true}
+                    {/* Content Section */}
+                    <View className="bg-white">
+                        {gradeComment && (
+                            <View className="px-6 py-4">
+                                <View
+                                    className="bg-gray-50 rounded-2xl p-4 border-l-4"
+                                    style={{
+                                        borderLeftColor: gradientColors[0],
+                                    }}
+                                >
+                                    <View className="flex-row items-center mb-2">
+                                        <Ionicons
+                                            name="bulb-outline"
+                                            size={16}
+                                            color={gradientColors[0]}
                                         />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            {gradeComment && (
-                                <View className="border border-green-200 bg-green-50 rounded-lg p-4 w-full mb-4 shadow-sm">
-                                    <Text className="text-base font-semibold text-green-800 mb-2">
-                                        Feedback
-                                    </Text>
-                                    <Text
-                                        className="text-[16px] text-green-900 font-medium"
-                                        style={{ lineHeight: 22 }}
-                                    >
+                                        <Text className="text-gray-800 font-semibold ml-2">
+                                            Personalized Feedback
+                                        </Text>
+                                    </View>
+                                    <Text className="text-gray-700 text-[15px] leading-5">
                                         {gradeComment}
                                     </Text>
                                 </View>
-                            )}
+                            </View>
+                        )}
 
-                            <TouchableOpacity
-                                onPress={() => setShowDetails(!showDetails)}
-                                className="flex-row items-center mb-4"
-                            >
-                                <Text className="text-blue-500 font-medium mr-1">
-                                    {showDetails ? "See less" : "See more"}
+                        {/* Key Factors */}
+                        {driverReasons && driverReasons.length > 0 && (
+                            <View className="px-6 pb-4">
+                                <Text className="text-gray-500 text-xs font-medium mb-3 uppercase tracking-wide">
+                                    Key Factors
                                 </Text>
-                                <Ionicons
-                                    name={
-                                        showDetails
-                                            ? "chevron-up"
-                                            : "chevron-down"
-                                    }
-                                    size={16}
-                                    color={Colors.primary}
-                                />
-                            </TouchableOpacity>
-
-                            {showDetails && (
-                                <>
-                                    {meal.calories !== undefined && (
-                                        <Text className="text-base text-gray-700 mt-1">
-                                            Total Calories:{" "}
-                                            <Text className="font-semibold">
-                                                {meal.calories}
+                                <View className="flex-row flex-wrap">
+                                    {driverReasons.map((reason, index) => (
+                                        <View
+                                            key={index}
+                                            className="bg-gray-100 rounded-full px-3 py-2 mr-2 mb-2 border"
+                                            style={{
+                                                borderColor:
+                                                    gradientColors[0] + "20",
+                                            }}
+                                        >
+                                            <Text className="text-gray-700 text-xs font-medium">
+                                                {reason}
                                             </Text>
-                                        </Text>
-                                    )}
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
 
-                                    {/* Individual Dishes Section */}
-                                    {parsedMeal?.dishes &&
-                                        parsedMeal.dishes.length > 0 && (
-                                            <View className="mt-2 border border-gray-200 rounded-lg p-4 w-full mb-4">
-                                                <Text className="text-base font-semibold text-gray-800 mb-3">
-                                                    Individual Dishes
-                                                </Text>
-                                                {parsedMeal.dishes.map(
-                                                    (dish, index) => (
-                                                        <View
-                                                            key={index}
-                                                            className="mb-3 pb-3 border-b border-gray-100 last:border-b-0"
-                                                        >
-                                                            <Text className="text-gray-800 font-medium mb-2">
-                                                                {dish.quantity}{" "}
-                                                                {dish.unit}{" "}
-                                                                {dish.name}
-                                                            </Text>
-                                                            {dish.nutrition && (
-                                                                <View className="ml-2">
-                                                                    <Text className="text-sm text-gray-600">
-                                                                        {[
-                                                                            dish
-                                                                                .nutrition
-                                                                                .calories &&
-                                                                                `Calories: ${Math.round(
+                        {/* Expandable Details */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowDetails(!showDetails);
+                                Haptics.impactAsync(
+                                    Haptics.ImpactFeedbackStyle.Light
+                                );
+                            }}
+                            className="px-6 py-3 flex-row items-center justify-center border-t border-gray-100"
+                        >
+                            <Text className="text-gray-600 font-medium mr-1">
+                                {showDetails
+                                    ? "Show Less"
+                                    : "Show Detailed Breakdown"}
+                            </Text>
+                            <Ionicons
+                                name={
+                                    showDetails ? "chevron-up" : "chevron-down"
+                                }
+                                size={16}
+                                color="#6b7280"
+                            />
+                        </TouchableOpacity>
+
+                        {showDetails && (
+                            <ScrollView className="max-h-60 px-6 pb-4">
+                                {/* Individual Dishes Section */}
+                                {parsedMeal?.dishes &&
+                                    parsedMeal.dishes.length > 0 && (
+                                        <View className="border border-gray-200 rounded-xl p-4 mb-4">
+                                            <Text className="text-gray-800 font-semibold mb-3">
+                                                Individual Dishes
+                                            </Text>
+                                            {parsedMeal.dishes.map(
+                                                (dish, index) => (
+                                                    <View
+                                                        key={index}
+                                                        className="mb-3 pb-3 border-b border-gray-100 last:border-b-0"
+                                                    >
+                                                        <Text className="text-gray-800 font-medium mb-2">
+                                                            {dish.quantity}{" "}
+                                                            {dish.unit}{" "}
+                                                            {dish.name}
+                                                        </Text>
+                                                        {dish.nutrition && (
+                                                            <View className="ml-2">
+                                                                <Text className="text-sm text-gray-600">
+                                                                    {[
+                                                                        dish
+                                                                            .nutrition
+                                                                            .calories &&
+                                                                            `Calories: ${Math.round(
+                                                                                dish
+                                                                                    .nutrition
+                                                                                    .calories
+                                                                            )}`,
+                                                                        dish
+                                                                            .nutrition
+                                                                            .protein_g &&
+                                                                            `Protein: ${
+                                                                                Math.round(
                                                                                     dish
                                                                                         .nutrition
-                                                                                        .calories
-                                                                                )}`,
-                                                                            dish
-                                                                                .nutrition
-                                                                                .protein_g &&
-                                                                                `Protein: ${
-                                                                                    Math.round(
-                                                                                        dish
-                                                                                            .nutrition
-                                                                                            .protein_g *
-                                                                                            10
-                                                                                    ) /
-                                                                                    10
-                                                                                }g`,
-                                                                            dish
-                                                                                .nutrition
-                                                                                .carbohydrates_g &&
-                                                                                `Carbs: ${
-                                                                                    Math.round(
-                                                                                        dish
-                                                                                            .nutrition
-                                                                                            .carbohydrates_g *
-                                                                                            10
-                                                                                    ) /
-                                                                                    10
-                                                                                }g`,
-                                                                            dish
-                                                                                .nutrition
-                                                                                .fat_g &&
-                                                                                `Fat: ${
-                                                                                    Math.round(
-                                                                                        dish
-                                                                                            .nutrition
-                                                                                            .fat_g *
-                                                                                            10
-                                                                                    ) /
-                                                                                    10
-                                                                                }g`,
-                                                                        ]
-                                                                            .filter(
-                                                                                Boolean
-                                                                            )
-                                                                            .join(
-                                                                                " • "
-                                                                            )}
-                                                                    </Text>
-                                                                    {(dish
-                                                                        .nutrition
-                                                                        .fiber_g ||
+                                                                                        .protein_g *
+                                                                                        10
+                                                                                ) /
+                                                                                10
+                                                                            }g`,
                                                                         dish
                                                                             .nutrition
-                                                                            .sugar_g ||
+                                                                            .carbohydrates_g &&
+                                                                            `Carbs: ${
+                                                                                Math.round(
+                                                                                    dish
+                                                                                        .nutrition
+                                                                                        .carbohydrates_g *
+                                                                                        10
+                                                                                ) /
+                                                                                10
+                                                                            }g`,
                                                                         dish
                                                                             .nutrition
-                                                                            .sodium_mg) && (
-                                                                        <Text className="text-sm text-gray-500 mt-1">
-                                                                            {[
-                                                                                dish
-                                                                                    .nutrition
-                                                                                    .fiber_g &&
-                                                                                    `Fiber: ${
-                                                                                        Math.round(
-                                                                                            dish
-                                                                                                .nutrition
-                                                                                                .fiber_g *
-                                                                                                10
-                                                                                        ) /
+                                                                            .fat_g &&
+                                                                            `Fat: ${
+                                                                                Math.round(
+                                                                                    dish
+                                                                                        .nutrition
+                                                                                        .fat_g *
                                                                                         10
-                                                                                    }g`,
-                                                                                dish
-                                                                                    .nutrition
-                                                                                    .sugar_g &&
-                                                                                    `Sugar: ${
-                                                                                        Math.round(
-                                                                                            dish
-                                                                                                .nutrition
-                                                                                                .sugar_g *
-                                                                                                10
-                                                                                        ) /
-                                                                                        10
-                                                                                    }g`,
-                                                                                dish
-                                                                                    .nutrition
-                                                                                    .sodium_mg &&
-                                                                                    `Sodium: ${Math.round(
-                                                                                        dish
-                                                                                            .nutrition
-                                                                                            .sodium_mg
-                                                                                    )}mg`,
-                                                                            ]
-                                                                                .filter(
-                                                                                    Boolean
-                                                                                )
-                                                                                .join(
-                                                                                    " • "
-                                                                                )}
-                                                                        </Text>
-                                                                    )}
-                                                                </View>
-                                                            )}
-                                                            {dish.ingredients &&
-                                                                dish.ingredients
-                                                                    .length >
-                                                                    0 && (
-                                                                    <View className="ml-2 mt-2">
-                                                                        <Text className="text-xs text-gray-500">
-                                                                            Ingredients:{" "}
-                                                                            {dish.ingredients
-                                                                                .map(
-                                                                                    (
-                                                                                        ing
-                                                                                    ) =>
-                                                                                        ing.name
-                                                                                )
-                                                                                .join(
-                                                                                    ", "
-                                                                                )}
-                                                                        </Text>
-                                                                    </View>
-                                                                )}
-                                                        </View>
-                                                    )
-                                                )}
-                                            </View>
-                                        )}
-
-                                    {/* --- SCORE CALCULATION BREAKDOWN (COMMENTED OUT) --- */}
-                                    {false && (
-                                        <View className="mt-2 border border-gray-200 rounded-lg p-4 w-full">
-                                            <Text className="text-base font-semibold text-gray-800 mb-3">
-                                                Score Calculation
-                                            </Text>
-                                            <View className="mb-2">
-                                                <Text className="text-gray-700 font-medium">
-                                                    Starting score: 60 points
-                                                </Text>
-                                            </View>
-                                            {/* ...rest of score breakdown... */}
+                                                                                ) /
+                                                                                10
+                                                                            }g`,
+                                                                    ]
+                                                                        .filter(
+                                                                            Boolean
+                                                                        )
+                                                                        .join(
+                                                                            " • "
+                                                                        )}
+                                                                </Text>
+                                                            </View>
+                                                        )}
+                                                    </View>
+                                                )
+                                            )}
                                         </View>
                                     )}
+                            </ScrollView>
+                        )}
 
-                                    {/* Key factors (if any) */}
-                                    {driverReasons.length > 0 && (
-                                        <View className="mt-4 w-full">
-                                            <Text className="text-sm text-gray-600 mb-1">
-                                                Key factors
-                                            </Text>
-                                            <View className="flex-row flex-wrap">
-                                                {mealAnalysis.driverReasons.map(
-                                                    (reason, index) => (
-                                                        <View
-                                                            key={index}
-                                                            className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2"
-                                                        >
-                                                            <Text className="text-xs text-gray-800">
-                                                                {reason}
-                                                            </Text>
-                                                        </View>
-                                                    )
-                                                )}
-                                            </View>
-                                        </View>
-                                    )}
-                                </>
-                            )}
-                        </View>
-                    </ScrollView>
+                        {/* Action Buttons */}
+                        <View className="px-6 pt-4 pb-8 border-t border-gray-100">
+                            <View className="flex-row space-x-3">
+                                <TouchableOpacity
+                                    className="flex-1 py-4 rounded-xl items-center mr-3"
+                                    style={{
+                                        backgroundColor: gradientColors[0],
+                                    }}
+                                    onPress={onClose}
+                                >
+                                    <Text className="text-white font-semibold text-base">
+                                        Awesome!
+                                    </Text>
+                                </TouchableOpacity>
 
-                    <View className="p-4 border-t border-gray-100">
-                        <View className="flex-row space-x-3 gap-6">
-                            <TouchableOpacity
-                                className="flex-1 bg-primary py-4 rounded-lg items-center"
-                                onPress={onClose}
-                            >
-                                <Text className="text-white font-semibold text-base">
-                                    Got it
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                className="flex-1 border border-gray-300 py-4 rounded-lg items-center"
-                                onPress={onEdit}
-                            >
-                                <Text className="text-gray-600 font-medium">
-                                    Edit meal
-                                </Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    className="flex-1 border border-gray-300 py-4 rounded-xl items-center"
+                                    onPress={onEdit}
+                                >
+                                    <Text className="text-gray-600 font-medium">
+                                        Edit Meal
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
-                </View>
+                </Animated.View>
             </BlurView>
         </Modal>
     );

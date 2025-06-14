@@ -28,12 +28,19 @@ export function RecordingProvider({ children }) {
             setIsProcessing(true);
             const recordingUri = audioRecorder.uri;
             const text = await transcribeAudio(recordingUri);
-            setTranscript(text || "No speech detected. Please try again.");
+
+            if (!text || text.trim() === "") {
+                setTranscript("No speech detected. Please try again.");
+                return;
+            }
+
+            setTranscript(text);
             await saveMeal(text);
+            // Only show feedback modal on successful meal processing
             setShowFeedback(true);
         } catch (error) {
+            // Don't show feedback modal on errors - let ErrorBanner handle it
             setTranscript("Error processing recording. Please try again.");
-            setShowFeedback(true);
         } finally {
             setIsProcessing(false);
         }

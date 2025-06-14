@@ -20,11 +20,28 @@ const NUTRITION_FIELDS = {
     sodium_mg: { type: "number" },
 };
 
+// Define custom error types
+export class FoodRecognitionError extends Error {
+    constructor(message, originalDescription) {
+        super(message);
+        this.name = "FoodRecognitionError";
+        this.originalDescription = originalDescription;
+    }
+}
+
+export class NonFoodInputError extends Error {
+    constructor(message, originalDescription) {
+        super(message);
+        this.name = "NonFoodInputError";
+        this.originalDescription = originalDescription;
+    }
+}
+
 // Function schema for meal parsing
 const mealParserSchema = {
     name: "extract_foods",
     description:
-        "Extracts food items, quantities, and units from user meal descriptions. Be precise and consistent in your parsing. Seperate each dish",
+        "Extracts food items, quantities, and units from user meal descriptions. Be precise and consistent in your parsing. Separate each dish. If you cannot identify specific foods or if the input is unclear, return an appropriate error.",
     parameters: {
         type: "object",
         properties: {
@@ -45,6 +62,11 @@ const mealParserSchema = {
                             type: "string",
                             description: "Unit like slices, cups, glass, etc.",
                         },
+                        emoji: {
+                            type: "string",
+                            description:
+                                "A single relevant emoji that best represents this food item (e.g., 🍎 for apple, 🍕 for pizza, 🥗 for salad).",
+                        },
                         isEstimated: {
                             type: "boolean",
                             description:
@@ -60,6 +82,7 @@ const mealParserSchema = {
                         "name",
                         "quantity",
                         "unit",
+                        "emoji",
                         "isEstimated",
                         "nutrition",
                     ],
@@ -74,6 +97,19 @@ const mealParserSchema = {
                 type: "string",
                 description:
                     "A personalized, encouraging comment about the meal's nutritional quality. Should be specific to the foods mentioned and highlight positive aspects while giving constructive feedback. Keep it under 15 words and reference actual foods when possible.",
+            },
+            error: {
+                type: "string",
+                description: "Error message if the input cannot be processed",
+            },
+            errorType: {
+                type: "string",
+                enum: [
+                    "NON_FOOD_INPUT",
+                    "UNCLEAR_FOOD_DESCRIPTION",
+                    "UNRECOGNIZED_FOOD",
+                ],
+                description: "Type of error encountered",
             },
         },
         required: ["dishes", "totalNutrition", "gradeComment"],
@@ -111,7 +147,19 @@ export async function parseMealDescription(
                 {
                     role: "system",
                     content: `You are a meal parser that returns food items in JSON format. Be precise and consistent in your parsing.
-                    First, validate if the input is related to food or meals. If it's not food-related, return a JSON with an error message.
+                    
+                    IMPORTANT ERROR HANDLING:
+                    1. If the input is NOT related to food or meals (e.g., random text, questions, non-food items), return: {"error": "Input is not food-related", "errorType": "NON_FOOD_INPUT"}
+                    2. If the food description is too vague or unclear to identify specific foods, return: {"error": "Food description is too unclear to parse", "errorType": "UNCLEAR_FOOD_DESCRIPTION"}
+                    3. If you cannot recognize or identify specific foods mentioned, return: {"error": "Unable to recognize the foods mentioned", "errorType": "UNRECOGNIZED_FOOD"}
+                    4. Only proceed with normal parsing if you can clearly identify all foods mentioned
+                    
+                    EMOJI REQUIREMENTS:
+                    - For each food item, provide ONE relevant emoji that best represents that specific food
+                    - Choose the most specific emoji available (🍎 for apple, not 🍇 for apple)
+                    - Use food emojis when available, otherwise use the closest related emoji
+                    - Examples: 🍕 pizza, 🍔 burger, 🥗 salad, 🍎 apple, 🥑 avocado, 🍗 chicken, 🐟 fish, 🍚 rice, 🍞 bread, 🥛 milk, ☕ coffee, 🧃 juice
+                    
                     ${
                         includeNutrition
                             ? `
@@ -164,9 +212,20 @@ export async function parseMealDescription(
         // Parse the JSON string into an object
         const parsedMeal = JSON.parse(functionCall.arguments);
 
-        // Check if the response indicates non-food input
+        // Check if the response indicates an error
         if (parsedMeal.error) {
-            throw new Error(parsedMeal.error);
+            switch (parsedMeal.errorType) {
+                case "NON_FOOD_INPUT":
+                    throw new NonFoodInputError(parsedMeal.error, description);
+                case "UNCLEAR_FOOD_DESCRIPTION":
+                case "UNRECOGNIZED_FOOD":
+                    throw new FoodRecognitionError(
+                        parsedMeal.error,
+                        description
+                    );
+                default:
+                    throw new Error(parsedMeal.error);
+            }
         }
 
         // Validate the response structure
@@ -178,6 +237,13 @@ export async function parseMealDescription(
         parsedMeal.dishes.forEach((dish, index) => {
             if (!dish.name || typeof dish.quantity !== "number" || !dish.unit) {
                 throw new Error(`Invalid dish structure at index ${index}`);
+            }
+
+            // Validate emoji field
+            if (!dish.emoji || typeof dish.emoji !== "string") {
+                throw new Error(
+                    `Missing or invalid emoji field in dish at index ${index}`
+                );
             }
 
             if (includeNutrition) {
@@ -211,7 +277,6 @@ export async function parseMealDescription(
 
         return parsedMeal;
     } catch (error) {
-        console.error("Error parsing meal description:", error);
         throw error;
     }
 }
@@ -243,7 +308,6 @@ export async function parseAndAnalyzeMeal(description) {
             driverReasons: mealAnalysis.driverReasons,
         };
     } catch (error) {
-        console.error("Error parsing meal:", error);
         throw error;
     }
 }
