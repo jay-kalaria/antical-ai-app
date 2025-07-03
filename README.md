@@ -1,50 +1,168 @@
-# Welcome to your Expo app 👋
+# 🥑 Antical AI - Smart Meal Tracker & Grader
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> An AI-powered meal tracking app that analyzes your food choices and gives you personalized nutrition grades and tips!
 
-## Get started
+## 🎯 What is this?
 
-1. Install dependencies
+Antical AI is a React Native app that helps you track your meals and get instant AI-powered nutrition analysis. Just tell it what you ate, and it'll give you a grade from A-F plus actionable tips to improve your nutrition game!
 
-   ```bash
-   npm install
-   ```
+## ✨ Cool Features
 
-2. Start the app
+-   🤖 **AI Meal Analysis** - Describe your meal and get instant nutrition grading
+-   📸 **Smart Food Recognition** - Describe meals in natural language
+-   📊 **Nutrition Insights** - Get detailed breakdowns of calories, protein, fiber, and more
+-   📈 **Progress History** - See how your eating habits improve over time
+-   💡 **Smart Tips** - Get personalized suggestions to upgrade your meal grades
+-   🔄 **Real-time Sync** - All your data syncs across devices instantly
+-   🔐 **Social Auth** - Easy login with Google, Apple, or email
 
-   ```bash
-   npx expo start
-   ```
+## 🎥 Demo Videos
 
-In the output, you'll find options to open the app in a
+Want to see it in action? Check out our demo videos: [App_Demos](https://drive.google.com/drive/folders/1sYoWRFgJvZaqxDOUSIuAui0w1YA_n9x0?usp=share_link)  
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🛠️ Tech Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+-   **Frontend**: React Native + Expo
+-   **Backend**: Supabase (Database + Auth + Realtime)
+-   **Styling**: Tailwind CSS + NativeWind
+-   **State Management**: React Query + Context API
+-   **AI Integration**: Custom meal parsing and analysis engines\*
+-   **Navigation**: Expo Router
 
-## Get a fresh project
+\*Note: The core AI logic and sensitive algorithms are kept in private modules for security reasons.
 
-When you're ready, run:
+## 🚀 Getting Started
 
-```bash
-npm run reset-project
+### Prerequisites
+
+Make sure you have these installed:
+
+-   Node.js (v18 or higher)
+-   npm or yarn
+-   Expo CLI (`npm install -g expo-cli`)
+-   iOS Simulator (for Mac) or Android Studio
+
+### Installation
+
+1. **Clone the repo**
+
+    ```bash
+    git clone https://github.com/jay-kalaria/antical-ai-app
+    cd antical_app
+    ```
+
+2. **Install dependencies**
+
+    ```bash
+    npm install
+    ```
+
+3. **Set up environment variables**
+
+    ```bash
+    # Create a .env file and add your Supabase credentials
+    cp .env.example .env
+    ```
+
+    You'll need:
+
+    - Supabase URL
+    - Supabase Anon Key
+    - Any other API keys for the AI services
+
+4. **Start the development server**
+
+    ```bash
+    npx expo start
+    ```
+
+5. **Run on your device**
+    - Press `i` for iOS simulator
+    - Press `a` for Android emulator
+    - Scan the QR code with Expo Go app on your phone
+
+## 📱 App Structure
+
+```
+antical_app/
+├── app/                    # Main app screens (Expo Router)
+├── components/             # Reusable UI components
+├── contexts/               # React contexts for state management
+├── hooks/                  # Custom React hooks
+├── services/               # API services and external integrations
+├── utils/                  # Helper functions and utilities
+├── constants/              # App constants and theme
+└── antical-private-core/   # 🔒 Private AI logic (hidden for security)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🔒 Privacy & Security
 
-## Learn more
+The core AI algorithms, meal parsing logic, and sensitive business rules are kept in private modules (`antical-private-core/`) to protect our intellectual property and maintain security. They are available upon request.
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🎨 Key Features Explained
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Meal Grading System
 
-## Join the community
+-   **A Grade**: Excellent nutrition choices! 🌟
+-   **B Grade**: Pretty good, minor improvements possible
+-   **C Grade**: Average meal, room for improvement
+-   **D Grade**: Below average, consider healthier options
+-   **E Grade**: Poor nutrition choices, needs attention
 
-Join our community of developers creating universal apps.
+### Smart Tips
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The app doesn't just grade your meals - it gives you actionable tips to improve! For example:
+
+-   "Add some leafy greens to boost fiber"
+-   "Try swapping white rice for brown rice"
+-   "Consider reducing portion size"
+
+### Real-time Sync
+
+All your meal data syncs in real-time across devices using Supabase's real-time features.
+
+## 🧩 Contributing
+
+Want to help make Antical AI even better? Here's how:
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Test thoroughly
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## 🐛 Found a Bug?
+
+If something's not working right:
+
+1. Check if it's already reported in [Issues](https://github.com/jay-kalaria/antical-ai-app/issues)
+2. If not, create a new issue with:
+    - Steps to reproduce
+    - What you expected to happen
+    - What actually happened
+    - Screenshots if helpful
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Support
+
+Need help? Got questions?
+
+-   📧 Email: [jaykalaria.kontakt@gmail.com]
+
+## 🙏 Acknowledgments
+
+-   Thanks to the Expo team for making React Native development awesome
+-   Supabase for the amazing backend-as-a-service
+-   All the open-source libraries that make this possible
+-   Our beta testers who helped make this app better!
+
+---
+
+Made with ❤️ and lots of ☕ by Jay Kalaria.
+
+_P.S. - This app is still evolving! We're constantly adding new features and improvements. Stay tuned! 🚀_
