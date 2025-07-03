@@ -26,7 +26,6 @@ export default function TabLayout() {
                     paddingVertical: 4,
                 },
                 tabBarShowLabel: false,
-
             }}
         >
             <Tabs.Screen
@@ -59,7 +58,7 @@ export default function TabLayout() {
                     ),
                 }}
             />
-            <Tabs.Screen
+            {/* <Tabs.Screen
                 name="capture"
                 options={{
                     title: "Capture",
@@ -85,19 +84,15 @@ export default function TabLayout() {
                         </View>
                     ),
                 }}
-            />
+            /> */}
             <Tabs.Screen
                 name="chat"
                 options={{
-                    title: "Chat",
+                    title: "Favourites",
                     tabBarIcon: ({ color, size, focused }) => (
                         <View>
                             <Ionicons
-                                name={
-                                    focused
-                                        ? "chatbubble"
-                                        : "chatbubble-outline"
-                                }
+                                name={focused ? "heart" : "heart-outline"}
                                 size={size}
                                 color={color}
                             />

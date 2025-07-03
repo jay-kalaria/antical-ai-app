@@ -91,8 +91,13 @@ export function useUpdateMeal() {
             queryClient.setQueryData(["meals"], context.previousMeals);
             queryClient.setQueryData(["meal", id], context.previousMeal);
         },
+        onSuccess: (data, { id }) => {
+            // Immediately invalidate queries to ensure fresh data
+            queryClient.invalidateQueries({ queryKey: ["meals"] });
+            queryClient.invalidateQueries({ queryKey: ["meal", id] });
+        },
         onSettled: () => {
-            // RealtimeManager handles the sync
+            // RealtimeManager handles the additional sync
         },
     });
 }

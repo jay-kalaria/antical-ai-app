@@ -9,7 +9,7 @@ export default {
         slug: "Nutricado",
         version: "1.0.0",
         orientation: "portrait",
-        icon: "./assets/images/icon.png",
+        icon: "./assets/app_images/icon.png",
         scheme: "nutricado",
         userInterfaceStyle: "automatic",
         newArchEnabled: true,
@@ -23,10 +23,14 @@ export default {
         ios: {
             supportsTablet: true,
             bundleIdentifier: "com.nutricado.app",
+            icon: "./assets/app_images/icon.png",
+            infoPlist: {
+                ITSAppUsesNonExemptEncryption: false,
+            },
         },
         android: {
             adaptiveIcon: {
-                foregroundImage: "./assets/images/adaptive-icon.png",
+                foregroundImage: "./assets/app_images/icon.png",
                 backgroundColor: "#ffffff",
             },
             package: "com.nutricado.app",
@@ -35,7 +39,7 @@ export default {
         web: {
             bundler: "metro",
             output: "static",
-            favicon: "./assets/images/favicon.png",
+            favicon: "./assets/app_images/icon.png",
         },
         plugins: [
             "expo-router",

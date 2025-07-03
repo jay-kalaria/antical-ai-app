@@ -55,7 +55,10 @@ class RealtimeManager {
                     table: "daily_grades",
                 },
                 (payload) => {
-                    console.log("RealtimeManager: Daily grades changed:", payload);
+                    console.log(
+                        "RealtimeManager: Daily grades changed:",
+                        payload
+                    );
                     this.handleDailyGradesChange(payload);
                 }
             )
