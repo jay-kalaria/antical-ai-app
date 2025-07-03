@@ -1,4 +1,4 @@
-import { transcribeAudio } from "@/utils/whisper";
+import { transcribeAudio } from "@/private-core/whisper";
 import { AudioModule, RecordingPresets, useAudioRecorder } from "expo-audio";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Alert } from "react-native";

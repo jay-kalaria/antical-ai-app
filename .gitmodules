@@ -1,0 +1,3 @@
+[submodule "antical-private-core"]
+	path = antical-private-core
+	url = https://github.com/jay-kalaria/antical-private-core

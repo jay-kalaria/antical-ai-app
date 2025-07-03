@@ -3,7 +3,7 @@ import {
     FoodRecognitionError,
     NonFoodInputError,
     parseAndAnalyzeMeal,
-} from "@/utils/mealParser";
+} from "@/private-core/mealParser";
 import React, { createContext, useContext, useState } from "react";
 
 const MealContext = createContext();
