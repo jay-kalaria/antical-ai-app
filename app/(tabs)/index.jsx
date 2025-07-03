@@ -1,5 +1,5 @@
+import CaptureButton from "@/components/home/CaptureButton";
 import CustomAlert from "@/components/home/CustomAlert";
-import DailyGradeDisplay from "@/components/home/DailyGradeDisplay";
 import ErrorBanner from "@/components/home/ErrorBanner";
 import FeedbackModal from "@/components/home/FeedbackModal";
 import RecentlyAdded from "@/components/home/RecentlyAdded";
@@ -7,8 +7,23 @@ import { useMeal } from "@/contexts/MealContext";
 import { useRecording } from "@/contexts/RecordingContext";
 import { AudioModule } from "expo-audio";
 import React, { useEffect } from "react";
-import { Alert, SafeAreaView, Text, View } from "react-native";
+import {
+    Alert,
+    SafeAreaView,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import "../../global.css";
+
+// Speech bubble component
+const SpeechBubble = ({ text }) => (
+    <View className="absolute -top-12 -left-8 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
+        <Text className="text-gray-700 font-medium text-sm">{text}</Text>
+        {/* Speech bubble tail */}
+        <View className="absolute -bottom-2 left-8 w-4 h-4 bg-white border-r-2 border-b-2 border-gray-200 transform rotate-45" />
+    </View>
+);
 
 export default function HomeScreen() {
     const {
@@ -89,20 +104,23 @@ export default function HomeScreen() {
                     <MealGauge />
                 </View> */}
 
-                {/* <TouchableOpacity className="mb-10 p-5">
-                    <CaptureButton
-                        size={200}
-                        isRecording={isRecording}
-                        isProcessing={isProcessing}
-                        onPress={
-                            isProcessing
-                                ? null
-                                : isRecording
-                                ? stopRecording
-                                : record
-                        }
-                    />
-                </TouchableOpacity> */}
+                <TouchableOpacity className=" p-5">
+                    <View className="relative">
+                        <CaptureButton
+                            size={260}
+                            isRecording={isRecording}
+                            isProcessing={isProcessing}
+                            onPress={
+                                isProcessing
+                                    ? null
+                                    : isRecording
+                                    ? stopRecording
+                                    : record
+                            }
+                        />
+                        { !isProcessing && <SpeechBubble text="What did you eat today?" />}
+                    </View>
+                </TouchableOpacity>
 
                 {/* <View className="w-full bg-white rounded-t-3xl shadow-lg pt-4 pb-14 px-2">
                     <InsightsPanel />

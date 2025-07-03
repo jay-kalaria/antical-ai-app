@@ -1,4 +1,4 @@
-import { useCreateMeal } from "@/hooks/useMeals";
+import { useCreateMeal, useUpdateMeal } from "@/hooks/useMeals";
 import {
     FoodRecognitionError,
     NonFoodInputError,
@@ -18,9 +18,11 @@ export function MealProvider({ children }) {
     const [errorState, setErrorState] = useState(null);
     const [showCustomAlert, setShowCustomAlert] = useState(false);
     const [alertConfig, setAlertConfig] = useState({});
+    const [currentMealId, setCurrentMealId] = useState(null);
 
-    // Use React Query mutation hook
+    // Use React Query mutation hooks
     const createMealMutation = useCreateMeal();
+    const updateMealMutation = useUpdateMeal();
 
     const transformMealData = (parsedMeal) => {
         if (!parsedMeal?.dishes) {
@@ -69,6 +71,49 @@ export function MealProvider({ children }) {
         setShowCustomAlert(true);
     };
 
+    // Helper function to upgrade grade
+    const upgradeGrade = (currentGrade) => {
+        const gradeMap = { E: "D", D: "C", C: "B", B: "A", A: "A" };
+        return gradeMap[currentGrade] || currentGrade;
+    };
+
+    // Function to follow tip and upgrade grade
+    const followTip = async () => {
+        try {
+            if (!currentMealId || !mealAnalysis?.grade) {
+                throw new Error("No meal data available for upgrade");
+            }
+
+            const currentGrade = mealAnalysis.grade;
+            if (currentGrade === "A") {
+                throw new Error("Grade A cannot be upgraded");
+            }
+
+            const upgradedGrade = upgradeGrade(currentGrade);
+
+            // Update meal in backend
+            await updateMealMutation.mutateAsync({
+                id: currentMealId,
+                updates: {
+                    meal_grade: upgradedGrade,
+                    original_grade: currentGrade,
+                    tip_followed: true,
+                },
+            });
+
+            // Update local state
+            setMealAnalysis((prev) => ({
+                ...prev,
+                grade: upgradedGrade,
+                originalGrade: currentGrade,
+            }));
+
+            return upgradedGrade;
+        } catch (error) {
+            throw error;
+        }
+    };
+
     const saveMeal = async (description) => {
         try {
             setIsProcessing(true);
@@ -91,6 +136,7 @@ export function MealProvider({ children }) {
                     .join(", "),
                 meal_description: mealDescription,
                 meal_grade: newMealAnalysis.grade,
+                original_grade: newMealAnalysis.grade, // Store original grade
                 comment: gradeComment,
                 meal_date: new Date().toISOString(),
                 calories: newParsedMeal.totalNutrition?.calories || null,
@@ -101,6 +147,7 @@ export function MealProvider({ children }) {
                 fiber: newParsedMeal.totalNutrition?.fiber_g || null,
                 sodium: newParsedMeal.totalNutrition?.sodium_mg || null,
                 additional_nutrients: {},
+                tip_followed: false, // Initialize as false
             };
 
             const savedMeal = await createMealMutation.mutateAsync(mealData);
@@ -109,6 +156,7 @@ export function MealProvider({ children }) {
             setMealAnalysis(newMealAnalysis);
             setDriverReasons(driverReasons);
             setGradeComment(gradeComment);
+            setCurrentMealId(savedMeal.id); // Store meal ID for later updates
 
             return savedMeal;
         } catch (error) {
@@ -148,6 +196,7 @@ export function MealProvider({ children }) {
         transcript,
         setTranscript,
         saveMeal,
+        followTip,
         getMealMetrics,
         parsedMeal,
         mealAnalysis,

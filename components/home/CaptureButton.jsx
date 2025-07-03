@@ -70,7 +70,7 @@ export default function CaptureButton({
                         />
                     ) : (
                         <Image
-                            source={require("@/assets/app_images/avo_2.png")}
+                            source={require("@/assets/app_images/avo_3.png")}
                             style={{
                                 width: size,
                                 height: size,

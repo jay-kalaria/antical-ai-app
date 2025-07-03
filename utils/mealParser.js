@@ -173,23 +173,23 @@ export async function parseMealDescription(
                     
                     For the gradeComment field:
                     - Analyze the total nutrition to determine what grade this meal would likely receive (A=excellent, B=good, C=average, D=poor, E=very poor)
-                    - Write a personalized, encouraging comment that:
+                    - Write a personalized, encouraging comment that ALWAYS includes an actionable tip to improve the meal:
                       * References specific foods from the meal when possible
                       * Highlights nutritional positives (high protein, fiber, vitamins, etc.)
-                      * Gives constructive feedback for improvement if needed
+                      * ALWAYS provides a specific, actionable improvement tip (even for excellent meals)
                       * Maintains an encouraging, friendly tone
                       * Stays under 50 words
-                      * Uses grade-appropriate language:
-                        - A grade: "Excellent choice!" "Fantastic nutrition!"
-                        - B grade: "Great meal!" "Well balanced!"
-                        - C grade: "Good start!" "Nice balance, could be improved with..."
-                        - D grade: "Consider adding..." "Try balancing with..."
-                        - E grade: "Small changes can make a big difference, try..."
+                      * Uses grade-appropriate language with actionable suggestions:
+                        - A grade: "Excellent choice! To maximize benefits, try adding [specific suggestion]" or "Perfect! Next time consider [enhancement]"
+                        - B grade: "Great meal! Boost it further by adding [specific food/nutrient]"
+                        - C grade: "Good start! Improve by adding [specific suggestion] for better [nutrition aspect]"
+                        - D grade: "Consider adding [specific foods] to boost [missing nutrients]"
+                        - E grade: "Try adding [specific foods] to improve [key nutritional areas]"
                     
                     Examples:
-                    - "Great choice! Your salmon and quinoa combo provides excellent protein (28g) and fiber. The sweet potato adds valuable vitamins too!"
-                    - "Good start with the chicken salad! Consider adding nuts or avocado next time to boost healthy fats and make it more filling."
-                    - "Your veggie stir-fry is packed with nutrients! The high fiber (12g) and moderate calories make this a nutritious choice."`
+                    - "Excellent choice! Your salmon and quinoa combo provides great protein (28g). Try adding leafy greens next time to boost iron and vitamins."
+                    - "Good start with the chicken salad! Add nuts or avocado to boost healthy fats and make it more filling."
+                    - "Your veggie stir-fry has great fiber (12g)! Consider adding tofu or beans next time to increase protein content."`
                             : ""
                     }`,
                 },
