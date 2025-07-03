@@ -5,12 +5,12 @@ config();
 
 export default {
     expo: {
-        name: "Nutricado",
-        slug: "Nutricado",
+        name: "AntiCal",
+        slug: "AntiCal",
         version: "1.0.0",
         orientation: "portrait",
         icon: "./assets/app_images/icon.png",
-        scheme: "nutricado",
+        scheme: "antical",
         userInterfaceStyle: "automatic",
         newArchEnabled: true,
         splash: {
@@ -22,7 +22,7 @@ export default {
         assetBundlePatterns: ["**/*"],
         ios: {
             supportsTablet: true,
-            bundleIdentifier: "com.nutricado.app",
+            bundleIdentifier: "com.antical.app",
             icon: "./assets/app_images/icon.png",
             infoPlist: {
                 ITSAppUsesNonExemptEncryption: false,
@@ -33,7 +33,7 @@ export default {
                 foregroundImage: "./assets/app_images/icon.png",
                 backgroundColor: "#ffffff",
             },
-            package: "com.nutricado.app",
+            package: "com.antical.app",
             edgeToEdgeEnabled: true,
         },
         web: {
